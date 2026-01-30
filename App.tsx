@@ -140,7 +140,7 @@ const App: React.FC = () => {
                   onClick={downloadAllTransactionsCSV}
                   className="flex-1 md:flex-none bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-8 py-4 rounded-[24px] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-white transition-all shadow-sm"
                 >
-                  <Download className="w-5 h-5" />
+                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                   Exporter Rapport
                 </button>
                 <button 
@@ -237,8 +237,8 @@ const App: React.FC = () => {
           </div>
           <div className="flex items-center gap-8">
             <div className="flex bg-slate-100 dark:bg-slate-900 p-2 rounded-[24px] gap-1 shadow-inner border border-slate-200/30 dark:border-slate-800">
-              <button onClick={() => setDarkMode(false)} className={`flex items-center gap-3 px-8 py-3.5 text-xs font-black uppercase tracking-[0.1em] rounded-[18px] transition-all ${!darkMode ? 'bg-white text-indigo-600 shadow-xl transform scale-105' : 'text-slate-400 hover:text-slate-600'}`}><Sun className="w-5 h-5" />Clair</button>
-              <button onClick={() => setDarkMode(true)} className={`flex items-center gap-3 px-8 py-3.5 text-xs font-black uppercase tracking-[0.1em] rounded-[18px] transition-all ${darkMode ? 'bg-indigo-600 text-white shadow-xl transform scale-105' : 'text-slate-400 hover:text-slate-500'}`}><Moon className="w-5 h-5" />Sombre</button>
+              <button onClick={() => setDarkMode(false)} className={`flex items-center gap-3 px-8 py-3.5 text-xs font-black uppercase tracking-[0.1em] rounded-[18px] transition-all ${!darkMode ? 'bg-white text-indigo-600 shadow-xl transform scale-105' : 'text-slate-400 hover:text-slate-600'}`}><Sun className="w-4 h-4 sm:w-5 sm:h-5" />Clair</button>
+              <button onClick={() => setDarkMode(true)} className={`flex items-center gap-3 px-8 py-3.5 text-xs font-black uppercase tracking-[0.1em] rounded-[18px] transition-all ${darkMode ? 'bg-indigo-600 text-white shadow-xl transform scale-105' : 'text-slate-400 hover:text-slate-500'}`}><Moon className="w-4 h-4 sm:w-5 sm:h-5" />Sombre</button>
             </div>
             <div className="hidden sm:block">
               <div className="w-16 h-16 rounded-[24px] border-4 border-indigo-100 dark:border-indigo-900 p-1.5 bg-white dark:bg-slate-800 shadow-lg transition-transform hover:scale-110 active:scale-90 cursor-pointer">

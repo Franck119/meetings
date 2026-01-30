@@ -1,176 +1,226 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
-import { generateAIResponse } from '../services/geminiService';
 
-interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'assistant';
-  timestamp: Date;
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Bot, User, Loader2, Maximize2, Sparkles, Volume2, VolumeX, Mic } from 'lucide-react';
+import { chatWithAssistant, textToSpeech } from '../services/geminiService';
+import { Meeting, Payment } from '../types';
+
+// Helper functions for recommended audio decoding from @google/genai guidelines
+function decode(base64: string) {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
 }
 
-export default function AssistantChat() {
+async function decodeAudioData(
+  data: Uint8Array,
+  ctx: AudioContext,
+  sampleRate: number,
+  numChannels: number,
+): Promise<AudioBuffer> {
+  const dataInt16 = new Int16Array(data.buffer);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < frameCount; i++) {
+      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+    }
+  }
+  return buffer;
+}
+
+interface Message {
+  role: 'assistant' | 'user';
+  text: string;
+  audioData?: string;
+}
+
+interface AssistantChatProps {
+  meetings: Meeting[];
+  payments: Payment[];
+}
+
+const AssistantChat: React.FC<AssistantChatProps> = ({ meetings, payments }) => {
   const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Bonjour! Je suis votre assistant IA. Comment puis-je vous aider aujourd\'hui?',
-      sender: 'assistant',
-      timestamp: new Date(),
-    },
+    { role: 'assistant', text: "Bonjour Boss ! Système Nex Intelligence prêt. Je peux analyser vos finances par ville ou vous lire vos rapports à voix haute. Que décidez-vous ?" }
   ]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const [loading, setLoading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState<number | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
 
   useEffect(() => {
-    scrollToBottom();
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: input,
-      sender: 'user',
-      timestamp: new Date(),
+  // Clean up audio resources on unmount
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
     };
+  }, []);
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInput('');
-    setIsLoading(true);
+  const handlePlayVoice = async (index: number, msgOverride?: Message) => {
+    const msg = msgOverride || messages[index];
+    if (!msg) return;
 
-    try {
-      const response = await generateAIResponse(input);
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: response,
-        sender: 'assistant',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'Désolé, une erreur s\'est produite. Veuillez réessayer.',
-        sender: 'assistant',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
+    // Toggle playback if already playing this message
+    if (isPlaying === index) {
+      if (sourceNodeRef.current) {
+        sourceNodeRef.current.stop();
+        sourceNodeRef.current = null;
+      }
+      setIsPlaying(null);
+      return;
     }
+
+    let audioBase64 = msg.audioData;
+    if (!audioBase64) {
+      setLoading(true);
+      audioBase64 = await textToSpeech(msg.text);
+      setLoading(false);
+      if (audioBase64) {
+        // Cache audio data in message state
+        setMessages(prev => prev.map((m, i) => i === index ? { ...m, audioData: audioBase64 } : m));
+      } else return;
+    }
+
+    // Initialize AudioContext lazily on user interaction
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+    }
+
+    // Recommended PCM decoding implementation
+    const bytes = decode(audioBase64);
+    const buffer = await decodeAudioData(bytes, audioContextRef.current, 24000, 1);
+    
+    const source = audioContextRef.current.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = 1.1; // Professional pace as requested
+    source.connect(audioContextRef.current.destination);
+    
+    sourceNodeRef.current = source;
+    setIsPlaying(index);
+    
+    source.onended = () => {
+      if (sourceNodeRef.current === source) {
+        setIsPlaying(null);
+        sourceNodeRef.current = null;
+      }
+    };
+    
+    source.start();
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input;
+    setInput('');
+    const userMessageObj: Message = { role: 'user', text: userMsg };
+    setMessages(prev => [...prev, userMessageObj]);
+    setLoading(true);
+    
+    const response = await chatWithAssistant(userMsg, { meetings, payments });
+    setLoading(false);
+    
+    if (response) {
+      const newMsg: Message = { role: 'assistant', text: response };
+      setMessages(prev => {
+        const next = [...prev, newMsg];
+        // Auto-play the newly added assistant message with correct indexing
+        setTimeout(() => handlePlayVoice(next.length - 1, newMsg), 100);
+        return next;
+      });
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      {/* Header - Mobile Optimized */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3 sm:p-4 shadow-md">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="bg-white/20 p-1.5 sm:p-2 rounded-full">
-            <Bot className="w-5 h-5 sm:w-6 sm:h-6" />
+    <div className="h-[calc(100vh-10rem)] flex flex-col bg-white dark:bg-slate-900 rounded-[40px] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+      <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-indigo-50/20 dark:bg-indigo-900/10">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 bg-gradient-to-tr from-[#4f46e5] to-[#818cf8] rounded-[24px] flex items-center justify-center shadow-xl">
+            <Bot className="w-9 h-9 text-white" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-semibold">Assistant IA</h2>
-            <p className="text-xs sm:text-sm text-blue-100">En ligne</p>
+            <h3 className="font-black text-slate-800 dark:text-white uppercase tracking-tighter text-xl">Boss Intelligence Voice</h3>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_12px_#10b981]"></span>
+              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Flux Vocal Turbo (1.1x)</p>
+            </div>
           </div>
+        </div>
+        <div className="flex gap-2 sm:gap-3">
+           <button className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 text-slate-400"><Mic className="w-6 h-6" /></button>
+           <button className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 text-slate-400"><Maximize2 className="w-6 h-6" /></button>
         </div>
       </div>
 
-      {/* Messages Container - WhatsApp Style */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex items-start gap-2 ${
-              message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'
-            }`}
-          >
-            {/* Avatar - Smaller on mobile */}
-            <div
-              className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
-                message.sender === 'user'
-                  ? 'bg-blue-500'
-                  : 'bg-gradient-to-br from-purple-500 to-blue-500'
-              }`}
-            >
-              {message.sender === 'user' ? (
-                <User className="w-4 h-4 sm:w-4 sm:h-4 text-white" />
-              ) : (
-                <Bot className="w-4 h-4 sm:w-4 sm:h-4 text-white" />
-              )}
-            </div>
-
-            {/* Message Bubble - WhatsApp Style */}
-            <div
-              className={`max-w-[75%] sm:max-w-[70%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 shadow-sm ${
-                message.sender === 'user'
-                  ? 'bg-blue-500 text-white rounded-tr-sm'
-                  : 'bg-white text-gray-800 rounded-tl-sm border border-gray-100'
-              }`}
-            >
-              <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">
-                {message.text}
-              </p>
-              <p
-                className={`text-[10px] sm:text-xs mt-1 ${
-                  message.sender === 'user' ? 'text-blue-100' : 'text-gray-400'
-                }`}
-              >
-                {message.timestamp.toLocaleTimeString('fr-FR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
+      <div className="flex-1 overflow-y-auto p-10 space-y-10 scroll-smooth custom-scrollbar bg-slate-50/20">
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`flex gap-5 max-w-[80%] ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${m.role === 'user' ? 'bg-[#4f46e5]' : 'bg-white dark:bg-slate-800'}`}>
+                {m.role === 'user' ? <User className="w-7 h-7 text-white" /> : <Bot className="w-7 h-7 text-[#4f46e5] dark:text-indigo-400" />}
+              </div>
+              <div className="relative">
+                <div className={`p-8 rounded-[32px] text-base leading-relaxed shadow-sm transform transition-all hover:shadow-xl ${
+                  m.role === 'user' ? 'bg-[#4f46e5] text-white rounded-tr-none font-bold' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-50 dark:border-slate-700 rounded-tl-none font-black'
+                }`}>
+                  {m.text}
+                </div>
+                {m.role === 'assistant' && (
+                  <button 
+                    onClick={() => handlePlayVoice(i)}
+                    className="absolute -right-14 top-2 p-3 bg-white dark:bg-slate-800 shadow-lg rounded-2xl text-indigo-600 dark:text-indigo-400 hover:scale-110 active:scale-90 transition-all border border-slate-100 dark:border-slate-700"
+                  >
+                    {isPlaying === i ? <VolumeX className="w-6 h-6 animate-pulse" /> : <Volume2 className="w-6 h-6" />}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
-
-        {isLoading && (
-          <div className="flex items-start gap-2">
-            <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-              <Bot className="w-4 h-4 sm:w-4 sm:h-4 text-white" />
-            </div>
-            <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-gray-100">
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-blue-500" />
+        {loading && (
+          <div className="flex justify-start">
+            <div className="flex gap-5 items-center">
+               <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-md"><Loader2 className="w-7 h-7 animate-spin text-indigo-500" /></div>
+               <div className="bg-white dark:bg-slate-900 px-8 py-5 rounded-[24px] border border-slate-100 dark:border-slate-800 font-black text-xs text-indigo-400 uppercase tracking-widest shadow-sm">Boss Intelligence réfléchit...</div>
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
+        <div ref={endRef} />
       </div>
 
-      {/* Input Area - Mobile Optimized */}
-      <div className="bg-white border-t border-gray-200 p-2 sm:p-4">
-        <div className="flex gap-2">
+      <div className="p-10 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+        <div className="relative flex items-center max-w-5xl mx-auto">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Tapez votre message..."
-            disabled={isLoading}
-            className="flex-1 px-3 py-2 sm:px-4 sm:py-2.5 text-sm sm:text-base border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="Dites quelque chose, Boss..."
+            className="w-full pl-10 pr-20 py-6 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-[32px] outline-none focus:border-indigo-500 focus:ring-8 focus:ring-indigo-500/5 transition-all text-lg font-black dark:text-white"
           />
-          <button
+          <button 
             onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className="flex-shrink-0 bg-blue-500 text-white p-2 sm:p-2.5 rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-md active:scale-95"
+            disabled={loading || !input.trim()}
+            className="absolute right-3 p-4 bg-[#4f46e5] text-white rounded-[24px] hover:bg-[#4338ca] shadow-2xl shadow-indigo-200 transition-all active:scale-90"
           >
-            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Send className="w-6 h-6" />
           </button>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default AssistantChat;

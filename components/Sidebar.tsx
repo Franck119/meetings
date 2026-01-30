@@ -1,94 +1,85 @@
-
 import React from 'react';
-import { NAV_ITEMS } from '../constants';
-import { LogOut, ChevronRight, Menu, X } from 'lucide-react';
-import { User } from '../types';
+import { NavItem } from '../types';
+import { LogOut } from 'lucide-react';
 
 interface SidebarProps {
+  navItems: NavItem[];
   activeTab: string;
-  setActiveTab: (tab: string) => void;
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  user: User;
+  onTabChange: (tab: string) => void;
   onLogout: () => void;
+  currentUser: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen, user, onLogout }) => {
+export default function Sidebar({
+  navItems,
+  activeTab,
+  onTabChange,
+  onLogout,
+  currentUser,
+}: SidebarProps) {
   return (
-    <>
-      {/* Mobile Overlay */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      <div className={`
-        fixed left-0 top-0 h-screen w-64 sm:w-72 bg-[#312e81] text-white z-50 flex flex-col transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="p-4 sm:p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-white/10 rounded-xl sm:rounded-2xl flex items-center justify-center backdrop-blur-md shadow-inner border border-white/5">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-lg sm:text-xl font-black tracking-tight uppercase">NexCRM</h1>
-              <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-indigo-300 font-black opacity-80">Manager Interne</p>
-            </div>
-            <button onClick={() => setIsOpen(false)} className="lg:hidden ml-auto p-1.5 hover:bg-white/10 rounded-lg">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        <nav className="flex-1 px-3 sm:px-4 mt-2 sm:mt-6 space-y-1 sm:space-y-2 overflow-y-auto custom-scrollbar">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                if (window.innerWidth < 1024) setIsOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 sm:gap-4 px-4 py-3 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl transition-all duration-300 group relative overflow-hidden ${
-                activeTab === item.id
-                  ? 'bg-white/10 text-white shadow-lg'
-                  : 'text-indigo-200/50 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <span className={`transition-transform duration-300 group-hover:scale-110 ${activeTab === item.id ? 'text-white' : 'text-indigo-400 group-hover:text-white'}`}>
-                {React.cloneElement(item.icon as React.ReactElement<any>, { className: 'w-4 h-4 sm:w-5 sm:h-5' })}
-              </span>
-              <span className="font-bold text-xs sm:text-[14px] uppercase tracking-wider">{item.label}</span>
-              {activeTab === item.id && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,1)] animate-pulse"></div>
-              )}
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-auto p-4 sm:p-6 border-t border-white/5 bg-indigo-950/30">
-          <div 
-            onClick={onLogout}
-            className="bg-white/5 p-3 sm:p-4 rounded-2xl sm:rounded-3xl flex items-center gap-3 sm:gap-4 hover:bg-rose-500/20 transition-all duration-300 cursor-pointer group border border-white/5"
-          >
-            <div className="relative">
-              <img src={user.avatar} alt="Avatar" className="w-10 h-10 rounded-xl sm:rounded-2xl border-2 border-indigo-400/30 group-hover:border-rose-400 transition-all" />
-              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#312e81] rounded-full"></div>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <p className="text-xs font-black text-white truncate uppercase tracking-tighter">{user.name}</p>
-              <p className="text-[8px] sm:text-[10px] font-bold text-indigo-300 opacity-60 uppercase tracking-[0.1em] group-hover:text-rose-400 transition-colors">Déconnexion</p>
-            </div>
-            <LogOut className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 group-hover:text-rose-400 transition-colors" />
-          </div>
-        </div>
+    <div className="bg-gradient-to-b from-blue-900 to-blue-800 text-white w-full sm:w-64 flex flex-col shadow-xl">
+      {/* Logo - Mobile Optimized */}
+      <div className="p-3 sm:p-6 border-b border-blue-700">
+        <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+          NexCRM
+        </h1>
+        <p className="text-xs sm:text-sm text-blue-200 mt-1">Finance & Meetings</p>
       </div>
-    </>
-  );
-};
 
-export default Sidebar;
+      {/* Navigation - Mobile Optimized */}
+      <nav className="flex-1 p-2 sm:p-4 overflow-y-auto">
+        <ul className="space-y-1 sm:space-y-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+
+            return (
+              <li key={item.id}>
+                <button
+                  onClick={() => onTabChange(item.id)}
+                  className={`w-full flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition-all duration-200 ${
+                    isActive
+                      ? 'bg-white text-blue-900 shadow-lg scale-105'
+                      : 'text-blue-100 hover:bg-blue-700 hover:text-white'
+                  }`}
+                >
+                  <Icon className={`flex-shrink-0 ${
+                    item.id === 'assistant' 
+                      ? 'w-4 h-4 sm:w-5 sm:h-5'  // Smaller icon for AI Assistant
+                      : 'w-5 h-5 sm:w-6 sm:h-6'
+                  }`} />
+                  <span className="text-sm sm:text-base font-medium truncate">
+                    {item.label}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* User Info & Logout - Mobile Optimized */}
+      <div className="p-3 sm:p-4 border-t border-blue-700">
+        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+            <span className="text-sm sm:text-base font-semibold">
+              {currentUser.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm font-medium truncate">{currentUser}</p>
+            <p className="text-[10px] sm:text-xs text-blue-200">Administrateur</p>
+          </div>
+        </div>
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors text-sm sm:text-base active:scale-95"
+        >
+          <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span>Déconnexion</span>
+        </button>
+      </div>
+    </div>
+  );
+}

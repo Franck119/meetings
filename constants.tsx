@@ -14,7 +14,6 @@ import { Meeting, MeetingFrequency, Payment, PaymentStatus, User } from './types
 
 export const NAV_ITEMS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { id: 'daily', label: 'Vue Journalière', icon: <Calendar className="w-5 h-5" /> },
   { id: 'meetings', label: 'Réunions', icon: <Calendar className="w-5 h-5" /> },
   { id: 'payments', label: 'Paiements', icon: <CreditCard className="w-5 h-5" /> },
   { id: 'reports', label: 'Rapports', icon: <FileText className="w-5 h-5" /> },

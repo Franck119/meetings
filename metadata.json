@@ -1,0 +1,8 @@
+{
+  "name": "NexCRM - Advanced Internal Finance & Meeting CRM",
+  "description": "A high-performance internal CRM for meeting management, financial tracking, and AI-driven predictive analytics. Features automated receipt generation, multi-level approval workflows, and an intelligent assistant.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

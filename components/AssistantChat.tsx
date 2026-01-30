@@ -158,7 +158,7 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ meetings, payments }) => 
             </div>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
            <button className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 text-slate-400"><Mic className="w-6 h-6" /></button>
            <button className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 text-slate-400"><Maximize2 className="w-6 h-6" /></button>
         </div>

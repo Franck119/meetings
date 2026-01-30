@@ -34,7 +34,7 @@ const MeetingList: React.FC<MeetingListProps> = ({ meetings, onAddMeeting, onEdi
   }, [meetings]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-700">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-700">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight uppercase">Réunions & Lieux</h2>
@@ -44,7 +44,7 @@ const MeetingList: React.FC<MeetingListProps> = ({ meetings, onAddMeeting, onEdi
           onClick={onAddMeeting}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4f46e5] hover:bg-[#4338ca] text-white px-8 py-3 rounded-2xl font-black shadow-lg transition-all active:scale-95"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
           Nouvelle Réunion
         </button>
       </div>
@@ -115,7 +115,7 @@ const MeetingList: React.FC<MeetingListProps> = ({ meetings, onAddMeeting, onEdi
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <span className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700">
+                      <span className="px-3 py-2 text-sm sm:text-base rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700">
                         {meeting.frequency}
                       </span>
                     </td>
@@ -135,7 +135,7 @@ const MeetingList: React.FC<MeetingListProps> = ({ meetings, onAddMeeting, onEdi
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <p className="text-sm text-slate-600 dark:text-slate-400 font-black uppercase tracking-tighter">{meeting.nextDate}</p>
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-black uppercase tracking-tighter">{meeting.nextDate}</p>
                     </td>
                     <td className="px-8 py-6 text-right">
                       <button 
@@ -143,7 +143,7 @@ const MeetingList: React.FC<MeetingListProps> = ({ meetings, onAddMeeting, onEdi
                         className="p-3 bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all border border-transparent hover:border-slate-200 group-hover:text-indigo-600"
                         title="Modifier Réunion"
                       >
-                        <Edit3 className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                        <Edit3 className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                       </button>
                     </td>
                   </tr>

@@ -28,10 +28,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setI
         fixed left-0 top-0 h-screen w-64 sm:w-72 bg-[#312e81] text-white z-50 flex flex-col transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="p-6 sm:p-8">
-          <div className="flex items-center gap-3 sm:gap-4 mb-2">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-xl sm:rounded-2xl flex items-center justify-center backdrop-blur-md shadow-inner border border-white/5">
-              <svg className="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="p-4 sm:p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-white/10 rounded-xl sm:rounded-2xl flex items-center justify-center backdrop-blur-md shadow-inner border border-white/5">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
@@ -76,11 +76,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setI
             className="bg-white/5 p-3 sm:p-4 rounded-2xl sm:rounded-3xl flex items-center gap-3 sm:gap-4 hover:bg-rose-500/20 transition-all duration-300 cursor-pointer group border border-white/5"
           >
             <div className="relative">
-              <img src={user.avatar} alt="Avatar" className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border-2 border-indigo-400/30 group-hover:border-rose-400 transition-all" />
+              <img src={user.avatar} alt="Avatar" className="w-10 h-10 rounded-xl sm:rounded-2xl border-2 border-indigo-400/30 group-hover:border-rose-400 transition-all" />
               <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#312e81] rounded-full"></div>
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-xs sm:text-sm font-black text-white truncate uppercase tracking-tighter">{user.name}</p>
+              <p className="text-xs font-black text-white truncate uppercase tracking-tighter">{user.name}</p>
               <p className="text-[8px] sm:text-[10px] font-bold text-indigo-300 opacity-60 uppercase tracking-[0.1em] group-hover:text-rose-400 transition-colors">Déconnexion</p>
             </div>
             <LogOut className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 group-hover:text-rose-400 transition-colors" />

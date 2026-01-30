@@ -9,6 +9,7 @@ import MeetingModal from './components/MeetingModal';
 import DetailsModal from './components/DetailsModal';
 import UserManagement from './components/UserManagement';
 import Reports from './components/Reports';
+import DailyView from './components/DailyView';
 import Login from './components/Login';
 import { MOCK_MEETINGS, MOCK_PAYMENTS } from './constants';
 import { Search, Menu, Sparkles, Moon, Sun, CreditCard, Download, Filter } from 'lucide-react';

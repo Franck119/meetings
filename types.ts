@@ -1,4 +1,7 @@
 
+// Fix: Import React to resolve the 'Cannot find namespace React' error for React.ReactNode
+import React from 'react';
+
 export enum PaymentStatus {
   PENDING = 'EN_ATTENTE',
   APPROVED = 'APPROUVÉ',

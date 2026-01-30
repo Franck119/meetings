@@ -1,275 +1,123 @@
+
 import React, { useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CreditCard, Plus, ArrowRight } from 'lucide-react';
 import { Meeting, Payment, PaymentStatus } from '../types';
-import { ChevronLeft, ChevronRight, Calendar, CreditCard, Users, MapPin, Clock, Plus } from 'lucide-react';
 
 interface DailyViewProps {
-  meetings: Meeting[];
   payments: Payment[];
+  meetings: Meeting[];
   onAddPayment: () => void;
 }
 
-const DailyView: React.FC<DailyViewProps> = ({ meetings, payments, onAddPayment }) => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+const DailyView: React.FC<DailyViewProps> = ({ payments, meetings, onAddPayment }) => {
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const formatDate = (date: Date) => {
-    return date.toISOString().split('T')[0];
+  const navigateDate = (days: number) => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + days);
+    setSelectedDate(d.toISOString().split('T')[0]);
   };
 
-  const formatDisplayDate = (date: Date) => {
-    return date.toLocaleDateString('fr-FR', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
-  const goToPreviousDay = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() - 1);
-    setSelectedDate(newDate);
-  };
-
-  const goToNextDay = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + 1);
-    setSelectedDate(newDate);
-  };
-
-  const goToToday = () => {
-    setSelectedDate(new Date());
-  };
-
-  const isToday = formatDate(selectedDate) === formatDate(new Date());
-
-  const dailyPayments = useMemo(() => {
-    return payments.filter(p => p.date === formatDate(selectedDate));
+  const dailyData = useMemo(() => {
+    const filtered = payments.filter(p => p.date === selectedDate);
+    const total = filtered.reduce((s, p) => s + p.amount, 0);
+    const paid = filtered.filter(p => p.status === PaymentStatus.PAID).reduce((s, p) => s + p.amount, 0);
+    const pending = filtered.filter(p => p.status === PaymentStatus.PENDING).reduce((s, p) => s + p.amount, 0);
+    
+    return { list: filtered, total, paid, pending };
   }, [payments, selectedDate]);
 
-  const dailyMeetings = useMemo(() => {
-    return meetings.filter(m => m.nextDate === formatDate(selectedDate));
-  }, [meetings, selectedDate]);
-
-  const totalAmount = dailyPayments.reduce((sum, p) => sum + p.amount, 0);
-  const paidAmount = dailyPayments
-    .filter(p => p.status === PaymentStatus.PAID)
-    .reduce((sum, p) => sum + p.amount, 0);
-  const pendingAmount = dailyPayments
-    .filter(p => p.status === PaymentStatus.PENDING)
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  const getStatusColor = (status: PaymentStatus) => {
-    switch (status) {
-      case PaymentStatus.PAID:
-        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
-      case PaymentStatus.PENDING:
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-      case PaymentStatus.APPROVED:
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-      case PaymentStatus.CANCELLED:
-        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-      default:
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
-    }
-  };
+  const formattedDate = new Date(selectedDate).toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-700">
-      {/* Date Navigation */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            <button
-              onClick={goToPreviousDay}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-
-            <div className="flex-1 sm:flex-initial text-center">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 dark:text-white capitalize">
-                {formatDisplayDate(selectedDate)}
-              </h2>
-              {!isToday && (
-                <button
-                  onClick={goToToday}
-                  className="text-xs sm:text-sm text-indigo-600 dark:text-indigo-400 hover:underline mt-1"
-                >
-                  Retour à aujourd'hui
-                </button>
-              )}
-            </div>
-
-            <button
-              onClick={goToNextDay}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-            >
-              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Date Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="w-full sm:w-auto flex items-center gap-4 bg-white dark:bg-slate-900 p-2 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-sm">
+          <button onClick={() => navigateDate(-1)} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all">
+            <ChevronLeft className="w-6 h-6 text-slate-400" />
+          </button>
+          <div className="flex-1 px-4 text-center">
+            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Journal d'Audit</p>
+            <h3 className="font-black text-slate-800 dark:text-white text-sm uppercase truncate max-w-[180px]">{formattedDate}</h3>
           </div>
-
-          <button
-            onClick={onAddPayment}
-            className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors text-sm sm:text-base"
-          >
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-            Nouveau Paiement
+          <button onClick={() => navigateDate(1)} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all">
+            <ChevronRight className="w-6 h-6 text-slate-400" />
           </button>
         </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 sm:p-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2 sm:p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-              <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Total</p>
-              <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
-                {totalAmount.toLocaleString()} FCFA
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 sm:p-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2 sm:p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Payé</p>
-              <p className="text-lg sm:text-xl md:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {paidAmount.toLocaleString()} FCFA
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 sm:p-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2 sm:p-3 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">En Attente</p>
-              <p className="text-lg sm:text-xl md:text-2xl font-bold text-amber-600 dark:text-amber-400">
-                {pendingAmount.toLocaleString()} FCFA
-              </p>
-            </div>
-          </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+           <button 
+             onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+             className="flex-1 sm:flex-none px-6 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 rounded-2xl font-black text-[10px] uppercase tracking-widest"
+           >
+             Aujourd'hui
+           </button>
+           <button 
+             onClick={onAddPayment}
+             className="flex-1 sm:flex-none px-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none"
+           >
+             <Plus className="w-4 h-4" /> Entrée
+           </button>
         </div>
       </div>
 
-      {/* Meetings Section */}
-      {dailyMeetings.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            Réunions du Jour ({dailyMeetings.length})
-          </h3>
-          <div className="space-y-3">
-            {dailyMeetings.map(meeting => (
-              <div
-                key={meeting.id}
-                className="p-3 sm:p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-3 h-3 rounded-full ${meeting.color}`}></div>
-                      <h4 className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base truncate">
-                        {meeting.title}
-                      </h4>
-                    </div>
-                    <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
-                        {meeting.location}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-                        {meeting.attendees.length} participants
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">
-                      Contribution
-                    </p>
-                    <p className="text-sm sm:text-base font-bold text-indigo-600 dark:text-indigo-400">
-                      {meeting.contributionAmount.toLocaleString()} FCFA
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Summary Row */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="bg-indigo-600 p-6 rounded-[32px] text-white shadow-xl">
+           <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-60">Collecté</p>
+           <h4 className="text-xl font-black mt-1 truncate">{dailyData.paid.toLocaleString()} FCFA</h4>
         </div>
-      )}
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-[32px] shadow-sm">
+           <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">En Attente</p>
+           <h4 className="text-xl font-black mt-1 text-amber-500 truncate">{dailyData.pending.toLocaleString()} FCFA</h4>
+        </div>
+        <div className="hidden md:block bg-slate-900 p-6 rounded-[32px] text-white">
+           <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-60">Volume Jour</p>
+           <h4 className="text-xl font-black mt-1 truncate">{dailyData.total.toLocaleString()} FCFA</h4>
+        </div>
+      </div>
 
-      {/* Payments Section */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 sm:p-6">
-        <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
-          <CreditCard className="w-5 h-5" />
-          Paiements du Jour ({dailyPayments.length})
-        </h3>
-
-        {dailyPayments.length === 0 ? (
-          <div className="text-center py-8 sm:py-12">
-            <CreditCard className="w-12 h-12 sm:w-16 sm:h-16 text-slate-300 dark:text-slate-700 mx-auto mb-3 sm:mb-4" />
-            <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400">
-              Aucun paiement pour cette date
-            </p>
-            <button
-              onClick={onAddPayment}
-              className="mt-3 sm:mt-4 px-4 py-2 text-sm sm:text-base text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-            >
-              Ajouter un paiement
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {dailyPayments.map(payment => {
-              const meeting = meetings.find(m => m.id === payment.meetingId);
+      {/* Daily List */}
+      <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-50 dark:border-slate-800">
+           <h3 className="font-black text-slate-800 dark:text-white text-xs uppercase tracking-widest">Transactions du jour</h3>
+        </div>
+        <div className="divide-y divide-slate-50 dark:divide-slate-800">
+          {dailyData.list.length === 0 ? (
+            <div className="py-20 text-center">
+               <CalendarIcon className="w-12 h-12 text-slate-100 dark:text-slate-800 mx-auto mb-4" />
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Aucune activité enregistrée</p>
+            </div>
+          ) : (
+            dailyData.list.map(p => {
+              const m = meetings.find(meet => meet.id === p.meetingId);
               return (
-                <div
-                  key={payment.id}
-                  className="p-3 sm:p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base mb-1 truncate">
-                        {payment.payerName}
-                      </h4>
-                      {meeting && (
-                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-2 truncate">
-                          {meeting.title} • {meeting.location}
-                        </p>
-                      )}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
-                          {payment.status}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {payment.method}
-                        </span>
-                      </div>
+                <div key={p.id} className="p-5 sm:p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-indigo-500">
+                       <CreditCard className="w-5 h-5" />
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-base sm:text-lg md:text-xl font-bold text-slate-900 dark:text-white">
-                        {payment.amount.toLocaleString()}
-                      </p>
-                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">FCFA</p>
+                    <div>
+                      <p className="font-black text-slate-800 dark:text-white text-xs sm:text-sm uppercase tracking-tight">{p.payerName}</p>
+                      <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase mt-0.5">{m?.title} • {m?.location}</p>
                     </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-sm sm:text-base text-slate-800 dark:text-white">{p.amount.toLocaleString()} FCFA</p>
+                    <span className={`text-[7px] sm:text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${p.status === PaymentStatus.PAID ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                      {p.status}
+                    </span>
                   </div>
                 </div>
               );
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
       </div>
     </div>
   );
